@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  auth0Id   String   @unique // Auth0 'sub' field
+  email     String   @unique
+  name      String?
+  picture   String?
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  carts     Cart[]
+  orders    Order[]
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int?       // Optional for guest carts
+  sessionId String?    // For guest carts
+  createdAt DateTime   @default(now())
+  
+  // Relationships
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId String
+  quantity  Int     @default(1)
+  
+  // Relationships
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int?
+  email           String
+  stripeSessionId String?     @unique
+  status          OrderStatus @default(PENDING)
+  total           Decimal     @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+  
+  // Relationships
+  user            User?       @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  
+  @@index([userId])
+  @@index([stripeSessionId])
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Store price at time of purchase
+  
+  // Relationships
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  sku         String?  @unique
+  inventory   Int      @default(0)
+  featured    Boolean  @default(false)
+  published   Boolean  @default(true)
+  
+  // Product details
+  materials   String[]
+  dimensions  String?
+  weight      String?
+  colors      String[]
+  
+  // Images
+  images      ProductImage[]
+  
+  // Category relationship
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  // Cart and Order relationships
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([categoryId])
+  @@index([featured])
+  @@index([published])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@index([productId])
+}

@@ -1,0 +1,12 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your values
+
+# Auth0 Configuration
+auth0_domain = "your-tenant.auth0.com"
+auth0_management_client_id = "your-management-client-id"
+auth0_management_client_secret = "your-management-client-secret"
+
+# Application Configuration
+app_name = "retail-demo"
+app_url = "https://your-app.vercel.app"
+api_identifier = "https://api.retail-demo.com"

@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"local-mcp": {
+			"url": "http://localhost:3002/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
