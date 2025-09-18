@@ -46,6 +46,7 @@ export const skyfireProcedures = {
       sessionId: z.string(),
       paymentAmount: z.number().positive(),
       paymentToken: z.string(),
+      skyfireAct: z.string().optional().describe("Skyfire actor/agent identifier for proxy payments"),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -54,7 +55,8 @@ export const skyfireProcedures = {
         console.log('Processing Skyfire payment:', {
           sessionId: input.sessionId,
           amount: input.paymentAmount,
-          userId: ctx.user.sub
+          userId: ctx.user.sub,
+          skyfireAct: input.skyfireAct || 'direct'
         });
 
         // Get user from database, create if not exists
@@ -73,7 +75,37 @@ export const skyfireProcedures = {
           });
         }
 
-        // Create a simple order record for Skyfire payment
+        // Create a Skyfire order with proper cart items
+        // First, get the cart items
+        const cart = await db.cart.findFirst({
+          where: { 
+            OR: [
+              { userId: dbUser.id },
+              { sessionId: input.sessionId }
+            ]
+          },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+
+        if (!cart || cart.items.length === 0) {
+          throw new Error("Cart is empty - cannot create Skyfire order");
+        }
+
+        // Verify the payment amount matches the cart total
+        const cartTotal = cart.items.reduce((sum, item) => 
+          sum + (Number(item.product.price) * item.quantity), 0
+        );
+
+        if (Math.abs(cartTotal - input.paymentAmount) > 0.01) {
+          throw new Error(`Payment amount mismatch: cart total is $${cartTotal.toFixed(2)}, but payment amount is $${input.paymentAmount.toFixed(2)}`);
+        }
+
         const order = await db.order.create({
           data: {
             userId: dbUser.id,
@@ -81,13 +113,34 @@ export const skyfireProcedures = {
             status: "PAID",
             email: ctx.user.email || "",
             stripeSessionId: `skyfire-${Date.now()}`, // Reuse this field for Skyfire payment ID
-          }
+            items: {
+              create: cart.items.map(item => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: Number(item.product.price),
+              })),
+            },
+          },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+
+        // Clear the cart after successful order creation
+        await db.cart.delete({
+          where: { id: cart.id },
         });
 
         console.log('Skyfire order created:', {
           orderId: order.id,
           total: order.total,
-          status: order.status
+          status: order.status,
+          itemCount: order.items.length,
+          skyfireAct: input.skyfireAct || 'direct'
         });
 
         return {
@@ -95,7 +148,9 @@ export const skyfireProcedures = {
           orderId: order.id,
           total: order.total,
           status: order.status,
-          paymentMethod: "SKYFIRE"
+          paymentMethod: "SKYFIRE",
+          itemCount: order.items.length,
+          skyfireAct: input.skyfireAct || 'direct'
         };
 
       } catch (error) {

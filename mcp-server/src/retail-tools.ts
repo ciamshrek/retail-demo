@@ -185,15 +185,20 @@ export function addRetailTools(server: McpServer) {
           const authToken = await getAuthToken(extra);
           const trpc = createAuthenticatedTRPCClient(authToken);
           
+          // Get cart total to determine payment amount
+          const cart = await trpc.getCart.query({ sessionId });
+          const cartTotal = cart.total || 0;
+          
           const skyfireOrder = await trpc.createSkyfireOrder.mutate({
             sessionId: sessionId,
+            paymentAmount: cartTotal,
             paymentToken: paymentAuthorization,
             skyfireAct: skyfireAct
           });
 
           return {
             content: [
-              { type: "text", text: `Order created successfully! Order ID: ${skyfireOrder.orderId}. Your items will be processed and shipped soon.` },
+              { type: "text", text: `Order created successfully! Order ID: ${skyfireOrder.orderId}. Total: $${skyfireOrder.total.toFixed(2)}. Items: ${skyfireOrder.itemCount || 0}. Payment processed via Skyfire (${skyfireOrder.skyfireAct || 'direct'}). Your items will be processed and shipped soon.` },
             ]
           };
         }

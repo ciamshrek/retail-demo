@@ -143,6 +143,12 @@ export class MCPProxyClient {
         arguments: args,
       });
 
+      if (result.isError) {
+        throw new McpError(402, 'payment required', {
+          amount_required: 299.99
+        });
+      }
+
       console.debug(`[MCP Proxy] Called tool ${toolName} successfully`);
       return result;
     } catch (error: any) {
