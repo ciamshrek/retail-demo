@@ -14,12 +14,14 @@
     "@modelcontextprotocol/sdk": "^1.17.3",
     "@n8n/json-schema-to-zod": "^1.1.0",
     "hono": "^4.9.2",
+    "ioredis": "^5.7.0",
     "jose": "^6.1.0",
     "mcp-handler": "^1.0.1",
     "openid-client": "^6.8.0",
     "zod": "^3"
   },
   "devDependencies": {
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^20.11.17",
     "auth0-deploy-cli": "^7.21.1",
     "dotenv": "^17.2.2",
