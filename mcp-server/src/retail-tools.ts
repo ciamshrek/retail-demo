@@ -214,6 +214,11 @@ export function addRetailTools(server: McpServer) {
           ]
         };
       } catch (error) {
+        
+        if (error instanceof McpError) {
+          throw error;
+        }
+
         return {
           content: [
             {
