@@ -1,4 +1,5 @@
 import { Redis } from 'ioredis';
+import { env } from './env.js';
 
 /**
  * Simple Redis-based token cache for MCP service connections
@@ -8,11 +9,7 @@ export class TokenCache {
   private redis: Redis;
 
   constructor() {
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
+    this.redis = new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });

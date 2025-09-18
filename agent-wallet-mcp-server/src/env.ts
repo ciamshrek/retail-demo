@@ -44,6 +44,11 @@ export const environmentVariablesSchema = z.object({
     .string()
     .describe("The Auth0 client secret for token exchange"),
 
+  REDIS_URL: z
+    .string()
+    .url()
+    .describe("Redis connection URL (provided by Vercel)"),
+
 });
 
 const parsedEnv = environmentVariablesSchema.parse(process.env);
