@@ -47,7 +47,17 @@ export const environmentVariablesSchema = z.object({
   REDIS_URL: z
     .string()
     .url()
-    .describe("Redis connection URL (provided by Vercel)"),
+    .optional()
+    .describe("Redis connection URL (legacy, optional)"),
+
+  KV_REST_API_URL: z
+    .string()
+    .url()
+    .describe("Upstash Redis REST API URL (provided by Vercel)"),
+
+  KV_REST_API_TOKEN: z
+    .string()
+    .describe("Upstash Redis REST API token (provided by Vercel)"),
 
 });
 

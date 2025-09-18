@@ -1,18 +1,17 @@
-import { Redis } from 'ioredis';
+import { Redis } from '@upstash/redis';
 import { env } from './env.js';
 
 /**
- * Simple Redis-based token cache for MCP service connections
+ * Simple Upstash Redis-based token cache for MCP service connections
  * Caches Auth0 tokens so we can reconnect without full Skyfire dance
  */
 export class TokenCache {
   private redis: Redis;
 
   constructor() {
-    this.redis = new Redis(env.REDIS_URL);
-
-    this.redis.on('error', (err: Error) => {
-      console.warn('[TokenCache] Redis error:', err);
+    this.redis = new Redis({
+      url: env.KV_REST_API_URL,
+      token: env.KV_REST_API_TOKEN,
     });
   }
 
@@ -38,8 +37,9 @@ export class TokenCache {
       const token = await this.redis.get(key);
       if (token) {
         console.log(`[TokenCache] Retrieved cached token for service ${serviceId}`);
+        return token as string;
       }
-      return token;
+      return null;
     } catch (error) {
       console.warn(`[TokenCache] Failed to retrieve token for ${serviceId}:`, error);
       return null;
@@ -80,7 +80,7 @@ export class TokenCache {
       const key = `mcp:config:${serviceId}`;
       const configStr = await this.redis.get(key);
       if (configStr) {
-        return JSON.parse(configStr);
+        return JSON.parse(configStr as string);
       }
       return null;
     } catch (error) {
@@ -90,9 +90,10 @@ export class TokenCache {
   }
 
   /**
-   * Close Redis connection
+   * Close Redis connection (Upstash doesn't need explicit close)
    */
   async close(): Promise<void> {
-    await this.redis.quit();
+    // Upstash Redis doesn't need explicit connection closing
+    console.log('[TokenCache] Connection closed (Upstash Redis)');
   }
 }
