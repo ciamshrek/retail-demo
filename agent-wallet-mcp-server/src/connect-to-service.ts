@@ -125,7 +125,7 @@ export class MCPProxyClient {
   /**
    * Call a tool on the upstream server
    */
-  async callTool(toolName: string, args: any): Promise<any> {
+  async callTool(toolName: string, args: any) {
     if (!this.connected || !this.client) {
       throw new Error('Not connected to upstream server');
     }

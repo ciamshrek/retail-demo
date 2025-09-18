@@ -79,9 +79,7 @@ async function registerDynamicTool(
         try {
           // Call the upstream tool and return the result directly
           const result = await proxyClient.callTool(toolDefinition.name, args);
-          return {
-            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-          };
+          return result as any;
         } catch (error) {
           return {
             content: [
