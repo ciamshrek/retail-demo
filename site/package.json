@@ -3,7 +3,7 @@
   "scripts": {
     "postinstall": "prisma generate && tsr generate",
     "dev": "vinxi dev",
-    "build": "vinxi build && db:migrate",
+    "build": "vinxi build && pnpm run db:migrate",
     "start": "vinxi start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . -c eslint.config.mjs --max-warnings 0",
