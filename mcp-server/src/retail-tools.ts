@@ -6,8 +6,8 @@ import type { AppRouter } from "../../site/src/server/trpc/root.js";
 import { exchangeTokenForAudience, type TokenExchangeResponse } from "./auth0.js";
 import { env } from "./env.js";
 
-const serverUrl = "http://localhost:3000";
-const trpcAudience = "http://localhost:3001"; // Target audience for TRPC
+const serverUrl = env.API_SERVER_URL;
+const trpcAudience = env.API_SERVER_AUDIENCE;
 
 // In-memory token cache
 interface CachedToken {

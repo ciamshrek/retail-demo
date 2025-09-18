@@ -19,6 +19,10 @@ export const environmentVariablesSchema = z.object({
   CLIENT_ID: z.string().describe("The Auth0 client ID for the Associated App"),
 
   CLIENT_SECRET: z.string().describe("The Auth0 client secret for the Associated App"),
+
+  API_SERVER_URL: z.string().url().optional().default("http://localhost:3000").describe("The URL for the API server"),
+
+  API_SERVER_AUDIENCE: z.string().url().optional().default("http://localhost:3000").describe("The audience for the API server"),
 });
 
 const parsedEnv = environmentVariablesSchema.parse(process.env);
