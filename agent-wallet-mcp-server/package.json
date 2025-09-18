@@ -1,21 +1,22 @@
 {
-  "name": "hono-mcp",
+  "name": "agent-wallet-mcp-server",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "deploy:auth0": "a0deploy import -c auth0/config.json -i auth0/tenant.yaml",
     "build": "pnpm run deploy:auth0",
-    "dev": "tsx --watch src/local.ts"
+    "dev": "tsx --watch src/local.ts",
+    "test:skyfire": "tsx src/test-skyfire.ts",
+    "start": "tsx src/local.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.12.0",
     "@modelcontextprotocol/sdk": "^1.17.3",
-    "@trpc/client": "^11.5.1",
+    "@n8n/json-schema-to-zod": "^1.1.0",
     "hono": "^4.9.2",
     "jose": "^6.1.0",
     "mcp-handler": "^1.0.1",
-    "openid-client": "^6",
-    "superjson": "^2.2.2",
+    "openid-client": "^6.8.0",
     "zod": "^3"
   },
   "devDependencies": {

@@ -12,6 +12,7 @@ import SuperJSON from "superjson";
 
 import { AppRouter } from "~/server/trpc/root";
 import { getQueryClient } from "./query-client";
+import { useAuth0Integration } from "~/hooks/useAuth0Integration";
 
 // Now, with the newer @trpc/tanstack-react-query package, we no longer need createTRPCReact.
 // We use createTRPCContext instead.
@@ -26,7 +27,9 @@ function getBaseUrl() {
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
+  const { getAccessTokenSilently } = useAuth0Integration();
 
+  // Recreate client when auth state changes to get fresh token handlers
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
@@ -40,10 +43,32 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           false: httpBatchStreamLink({
             transformer: SuperJSON,
             url: getBaseUrl() + "/trpc",
+            headers: async () => {
+              try {
+                // Auth0 will handle caching and refresh automatically
+                const accessToken = await getAccessTokenSilently({
+                  cacheMode: "on", // Use cached token if available
+                });
+                return { authorization: `Bearer ${accessToken}` };
+              } catch {
+                // Not authenticated or token failed - proceed without auth
+                return {};
+              }
+            },
           }),
           true: httpSubscriptionLink({
             transformer: SuperJSON,
             url: getBaseUrl() + "/trpc",
+            connectionParams: async () => {
+              try {
+                const accessToken = await getAccessTokenSilently({
+                  cacheMode: "on",
+                });
+                return { authorization: `Bearer ${accessToken}` };
+              } catch {
+                return {};
+              }
+            },
           }),
         }),
       ],

@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Lock, CreditCard, Truck, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuth0Integration } from "~/hooks/useAuth0Integration";
 
 export const Route = createFileRoute("/checkout/")({
   component: CheckoutPage,
@@ -16,7 +17,8 @@ function CheckoutPage() {
   const { items, clearCart, getSessionId } = useCartStore();
   const sessionId = getSessionId();
   const total = useCartTotal();
-  const { isAuthenticated, user, accessToken } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { getAccessTokenSilently } = useAuth0Integration();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [shippingInfo, setShippingInfo] = useState({
@@ -76,26 +78,33 @@ function CheckoutPage() {
         return;
       }
 
+      // Get fresh access token if user is authenticated (for tRPC auth)
+      if (isAuthenticated) {
+        try {
+          await getAccessTokenSilently();
+        } catch (error) {
+          console.error('Failed to get access token:', error);
+          // Continue without token for guest checkout
+        }
+      }
+
       const result = await createCheckoutSession.mutateAsync({
-        items: items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
         successUrl: `${window.location.origin}/checkout/success`,
         cancelUrl: `${window.location.origin}/checkout/cancel`,
-        accessToken: accessToken || undefined,
         sessionId: !isAuthenticated ? sessionId : undefined,
       });
 
+      if (!result.url) {
+        toast.error('Failed to create checkout session');
+        setIsProcessing(false);
+        return;
+      }
+
       // In a real implementation, redirect to Stripe
-      // window.location.href = result.url;
-      
-      // For demo purposes, simulate success
-      toast.success('Redirecting to payment...');
-      setTimeout(() => {
-        clearCart();
-        navigate({ to: '/checkout/success', search: { session_id: result.sessionId } });
-      }, 2000);
+      if (window && window.location) {
+        toast.success('Redirecting to payment...');
+        window.location.href = result.url;
+      }
 
     } catch (error) {
       toast.error('Failed to process checkout. Please try again.');
@@ -334,7 +343,7 @@ function CheckoutPage() {
               </div>
 
               {/* Checkout Button */}
-              <form onSubmit={handleSubmit} className="mt-6">
+              <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
                 <button
                   type="submit"
                   disabled={isProcessing}

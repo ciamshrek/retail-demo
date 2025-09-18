@@ -6,6 +6,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Header } from "~/components/Header";
+import { Auth0Initializer } from "~/components/Auth0Initializer";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -24,34 +25,36 @@ function RootComponent() {
 
   return (
     <TRPCReactProvider>
-      <div className="min-h-screen bg-white">
-        <Header />
-        <main>
-          <Outlet />
-        </main>
-        <Toaster 
-          position="bottom-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              iconTheme: {
-                primary: '#4ade80',
-                secondary: '#fff',
+      <Auth0Initializer>
+        <div className="min-h-screen bg-white">
+          <Header />
+          <main>
+            <Outlet />
+          </main>
+          <Toaster 
+            position="bottom-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: '#4ade80',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-      </div>
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </div>
+      </Auth0Initializer>
     </TRPCReactProvider>
   );
 }

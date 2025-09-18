@@ -1,8 +1,8 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { z } from "zod";
-import * as openid from "openid-client";
 import { env } from "./env.js";
 import { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import * as openid from 'openid-client';
 
 // Auth0 Access Token payload schema based on https://auth0.com/docs/secure/tokens
 export const Auth0AccessTokenPayloadSchema = z
@@ -16,7 +16,7 @@ export const Auth0AccessTokenPayloadSchema = z
     iat: z.number().describe("Issued at time"),
     exp: z.number().describe("Expiration time"),
     azp: z.string().describe("Authorized party - client ID"),
-    scope: z.string().describe("Granted scopes (space-separated)"),
+    scope: z.string().optional().default("").describe("Granted scopes (space-separated)"),
 
     // Auth0 specific claims
     gty: z.string().optional().describe("Grant type"),
@@ -90,6 +90,7 @@ export async function auth0(req: Request): Promise<AuthInfo | undefined> {
     return undefined;
   }
 }
+
 
 // Token exchange configuration and types
 export interface TokenExchangeConfig {
@@ -176,7 +177,7 @@ export async function performTokenExchange(
  * Helper function to exchange an Auth0 access token for a different audience
  * This is a common use case for token exchange in microservices architectures
  */
-export async function exchangeTokenForAudience(
+export async function exchangeSkyfireTokenForMCPServer(
   currentToken: string,
   targetAudience: string,
   config: Omit<TokenExchangeConfig, 'audience'>
@@ -185,7 +186,7 @@ export async function exchangeTokenForAudience(
     { ...config, audience: targetAudience },
     {
       subjectToken: currentToken,
-      subjectTokenType: 'https://retail.auth101.dev/te/service-to-service',
+      subjectTokenType: 'https://retail.auth101.dev/te/skyfire-token',
       audience: targetAudience,
     }
   );

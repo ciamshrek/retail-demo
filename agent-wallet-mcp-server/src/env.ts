@@ -5,6 +5,14 @@ export const environmentVariablesSchema = z.object({
     .string()
     .describe("The Auth0 domain eg: tenant.us.auth0.com"),
 
+  AUTH0_CLIENT_ID: z
+    .string()
+    .describe("The Auth0 client ID for token exchange"),
+
+  AUTH0_CLIENT_SECRET: z
+    .string()
+    .describe("The Auth0 client secret for token exchange"),
+
   ISSUER_BASE_URL: z
     .string()
     .url("Issuer must be a url")
@@ -16,9 +24,26 @@ export const environmentVariablesSchema = z.object({
     .url()
     .describe("The URL for the MCP resource (full URL with protocol and path) eg: https://your-site.com/mcp"),
 
-  CLIENT_ID: z.string().describe("The Auth0 client ID for the Associated App"),
 
-  CLIENT_SECRET: z.string().describe("The Auth0 client secret for the Associated App"),
+  SKYFIRE_API_KEY: z.string()
+    .describe("Skyfire API key for buyer agent"),
+
+  SKYFIRE_AGENT_ID: z.string()
+    .optional()
+    .describe("Skyfire agent ID (optional)"),
+
+  RETAIL_AUTH0_DOMAIN: z
+    .string()
+    .describe("The Auth0 domain eg: tenant.us.auth0.com"),
+
+  RETAIL_CLIENT_ID: z
+    .string()
+    .describe("The Auth0 client ID for token exchange"),
+
+  RETAIL_CLIENT_SECRET: z
+    .string()
+    .describe("The Auth0 client secret for token exchange"),
+
 });
 
 const parsedEnv = environmentVariablesSchema.parse(process.env);

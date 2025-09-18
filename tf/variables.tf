@@ -36,3 +36,9 @@ variable "mcp_identifier" {
   type        = string
   default     = "http://localhost:3002/mcp"
 }
+
+variable "skyfire_key" {
+  description = "Skyfire API key"
+  type        = string
+  sensitive = true
+}

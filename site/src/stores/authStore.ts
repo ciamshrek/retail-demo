@@ -11,7 +11,7 @@ export interface User {
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
-  accessToken: string | null;
+  accessToken: string | null; // Kept for tRPC auth, not persisted
   isLoading: boolean;
   login: (user: User, accessToken: string) => void;
   logout: () => void;
@@ -44,10 +44,11 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
+      // Only persist user info, not access tokens for security
+      // Access tokens are kept in memory and refreshed by Auth0Integration hook
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         user: state.user,
-        accessToken: state.accessToken,
       }),
     }
   )

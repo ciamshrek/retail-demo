@@ -18,7 +18,16 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <Auth0Provider clientId={env.VITE_AUTH0_CLIENT_ID} domain={env.VITE_AUTH0_DOMAIN}>
+      <Auth0Provider
+        domain={env.VITE_AUTH0_DOMAIN}
+        clientId={env.VITE_AUTH0_CLIENT_ID}
+        authorizationParams={{
+          redirect_uri: window.location.origin,
+          audience: env.VITE_AUTH0_AUDIENCE,
+        }}
+        cacheLocation="localstorage"
+        useRefreshTokens={true}
+      >
         <RouterProvider router={router} />
       </Auth0Provider>
     </React.StrictMode>,

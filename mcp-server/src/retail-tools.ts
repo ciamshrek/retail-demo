@@ -3,35 +3,160 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createTRPCClient, httpBatchStreamLink } from "@trpc/client";
 import SuperJSON from "superjson";
 import type { AppRouter } from "../../site/src/server/trpc/root.js";
+import { exchangeTokenForAudience, type TokenExchangeResponse } from "./auth0.js";
+import { env } from "./env.js";
 
 const serverUrl = "http://localhost:3000";
+const trpcAudience = "http://localhost:3001"; // Target audience for TRPC
 
-// Create a tRPC client
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchStreamLink({
-      transformer: SuperJSON,
-      url: `${serverUrl}/trpc`,
-    }),
-  ],
-});
+// In-memory token cache
+interface CachedToken {
+  token: string;
+  expiresAt: number;
+}
 
-// These would be HTTP calls to your tRPC endpoints
-// You could also import the tRPC router directly
-// if you share the database..
+const tokenCache = new Map<string, CachedToken>();
+
+// Helper function to get or exchange token
+async function getExchangedToken(originalToken: string): Promise<string> {
+  console.log(`🔄 TOKEN EXCHANGE: Starting token exchange process`);
+  console.log(`📋 Original token (first 10 chars): ${originalToken.substring(0, 10)}...`);
+  console.log(`🎯 Target audience: ${trpcAudience}`);
+  
+  const cacheKey = `trpc_${originalToken.substring(0, 20)}`; // Use part of token as cache key
+  const cached = tokenCache.get(cacheKey);
+  
+  // Check if we have a valid cached token (with 5 minute buffer)
+  if (cached && cached.expiresAt > Date.now() + 300000) {
+    console.log('✅ TOKEN EXCHANGE: Using cached exchanged token (no exchange needed)');
+    return cached.token;
+  }
+
+  try {
+    console.log('🚀 TOKEN EXCHANGE: Performing OAuth 2.0 token exchange...');
+    console.log(`📤 Exchanging for audience: ${trpcAudience}`);
+    
+    // Exchange token for TRPC audience
+    const exchangeResponse: TokenExchangeResponse = await exchangeTokenForAudience(
+      originalToken,
+      trpcAudience,
+      {
+        clientId: env.CLIENT_ID,
+        clientSecret: env.CLIENT_SECRET,
+        issuer: env.ISSUER_BASE_URL,
+      }
+    );
+
+    console.log('✅ TOKEN EXCHANGE: Exchange successful!');
+    console.log(`📥 New token (first 10 chars): ${exchangeResponse.access_token.substring(0, 10)}...`);
+    console.log(`⏰ Token expires in: ${exchangeResponse.expires_in} seconds`);
+
+    // Cache the exchanged token
+    const expiresAt = exchangeResponse.expires_in 
+      ? Date.now() + (exchangeResponse.expires_in * 1000)
+      : Date.now() + 3600000; // Default 1 hour if no expires_in
+
+    tokenCache.set(cacheKey, {
+      token: exchangeResponse.access_token,
+      expiresAt,
+    });
+
+    console.log('💾 TOKEN EXCHANGE: Token cached for future use');
+    return exchangeResponse.access_token;
+  } catch (error) {
+    console.error("❌ TOKEN EXCHANGE: Exchange failed:", error);
+    console.log('🔄 TOKEN EXCHANGE: Falling back to original token');
+    return originalToken;
+  }
+}
+
+// Create a function to get tRPC client with authentication
+function createAuthenticatedTRPCClient(token?: string) {
+  return createTRPCClient<AppRouter>({
+    links: [
+      httpBatchStreamLink({
+        transformer: SuperJSON,
+        url: `${serverUrl}/trpc`,
+        headers: async () => {
+          const headers: Record<string, string> = {};
+          if (token) {
+            console.log('🔐 AUTH: Creating authenticated TRPC client with token');
+            const exchangedToken = await getExchangedToken(token);
+            headers.Authorization = `Bearer ${exchangedToken}`;
+            console.log('🔐 AUTH: Authorization header set with exchanged token');
+          } else {
+            console.log('⚠️  AUTH: Creating unauthenticated TRPC client (no token provided)');
+          }
+          return headers;
+        },
+      }),
+    ],
+  });
+}
 
 // Default session ID for MCP testing
 const DEFAULT_SESSION_ID = 'mcp-test-session';
 
 export function addRetailTools(server: McpServer) {
+  // Helper function to get authentication token from MCP server context
+  async function getAuthToken(extra?: any): Promise<string | undefined> {
+    console.log('🔍 AUTH: Extracting token from MCP context...');
+    
+    // Extract token from the MCP server auth context
+    // The withMcpAuth wrapper passes the AuthInfo through extra.authInfo
+    if (extra?.authInfo?.token) {
+      console.log('✅ AUTH: Token found in extra.authInfo.token');
+      console.log(`📋 Token (first 10 chars): ${extra.authInfo.token.substring(0, 10)}...`);
+      return extra.authInfo.token;
+    }
+    
+    // Check if the auth info is directly in extra.auth (alternative location)
+    if (extra?.auth?.token) {
+      console.log('✅ AUTH: Token found in extra.auth.token');
+      console.log(`📋 Token (first 10 chars): ${extra.auth.token.substring(0, 10)}...`);
+      return extra.auth.token;
+    }
+    
+    // Alternative: check if the auth info is directly in extra
+    if (extra?.token) {
+      console.log('✅ AUTH: Token found in extra.token');
+      console.log(`📋 Token (first 10 chars): ${extra.token.substring(0, 10)}...`);
+      return extra.token;
+    }
+    
+    // Fallback: try to get from request if available
+    if (extra?.request?.headers) {
+      const authHeader = extra.request.headers.get?.("authorization") || 
+                         extra.request.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        console.log('✅ AUTH: Token found in request headers');
+        const token = authHeader.slice(7);
+        console.log(`📋 Token (first 10 chars): ${token.substring(0, 10)}...`);
+        return token;
+      }
+    }
+    
+    // Log for debugging purposes
+    console.log('❌ AUTH: No token found in MCP context');
+    console.log('🔍 AUTH: Available extra keys:', extra ? Object.keys(extra) : 'No extra context');
+    if (extra?.authInfo) {
+      console.log('🔍 AUTH: authInfo keys:', Object.keys(extra.authInfo));
+    }
+    
+    return undefined;
+  }
+
   server.tool(
     "checkout",
     "Use this tool to checkout",
     {
       sessionId: z.string().optional().describe("Session ID for guest users"),
     },
-    async ({ sessionId }) => {
+    async ({ sessionId }, extra) => {
       try {
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const result = await trpc.createCheckoutSession.mutate({
           sessionId: sessionId || DEFAULT_SESSION_ID,
           successUrl: "http://localhost:3000/checkout/success",
@@ -39,28 +164,16 @@ export function addRetailTools(server: McpServer) {
         });
 
         return {
-          content: [{ type: "text", text: "Proceed to checkout" }, {
-            type: "resource_link",
-            uri: result.url,
-            description: "Secure checkout link",
-          }]
-        }
-        // return {
-        //   elicitations: [{result.url]
-        // }
-        // return {
-        //   content: [
-        //     {
-        //       type: "text",
-        //       text: JSON.stringify({
-        //         success: true,
-        //         sessionId: result.sessionId,
-        //         checkoutUrl: result.url,
-        //         message: "Checkout session created successfully!"
-        //       }, null, 2),
-        //     },
-        //   ],
-        // };
+          content: [
+            { type: "text", text: "🛒 Checkout session created successfully!" }, 
+            {
+              type: "resource_link",
+              name: "Stripe Checkout",
+              uri: result.url,
+              description: "Click to complete your purchase securely"
+            }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -73,6 +186,7 @@ export function addRetailTools(server: McpServer) {
       }
     }
   );
+
   // Product search and discovery
   server.tool(
     "search_products",
@@ -89,9 +203,11 @@ export function addRetailTools(server: McpServer) {
         .default(12)
         .describe("Number of results to return"),
     },
-    async ({ query, categoryId, minPrice, maxPrice, limit }) => {
+    async ({ query, categoryId, minPrice, maxPrice, limit }, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const result = await trpc.getProducts.query({
           search: query,
           categoryId,
@@ -140,9 +256,11 @@ export function addRetailTools(server: McpServer) {
     {
       slug: z.string().describe("Product slug identifier"),
     },
-    async ({ slug }) => {
+    async ({ slug }, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const product = await trpc.getProduct.query({ slug });
 
         return {
@@ -186,9 +304,11 @@ export function addRetailTools(server: McpServer) {
     "get_categories",
     "Get all available product categories",
     {},
-    async () => {
+    async ({}, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const categories = await trpc.getCategories.query();
 
         return {
@@ -229,9 +349,11 @@ export function addRetailTools(server: McpServer) {
       quantity: z.number().min(1).describe("Quantity to add"),
       sessionId: z.string().optional().describe("Session ID for guest users"),
     },
-    async ({ productId, quantity, sessionId }) => {
+    async ({ productId, quantity, sessionId }, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         await trpc.addToCart.mutate({ 
           productId, 
           quantity, 
@@ -266,9 +388,11 @@ export function addRetailTools(server: McpServer) {
     {
       sessionId: z.string().optional().describe("Session ID for guest users"),
     },
-    async ({ sessionId }) => {
+    async ({ sessionId }, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const cart = await trpc.getCart.query({ 
           sessionId: sessionId || DEFAULT_SESSION_ID 
         });
@@ -318,9 +442,11 @@ export function addRetailTools(server: McpServer) {
         .default(8)
         .describe("Number of featured products to return"),
     },
-    async ({ limit }) => {
+    async ({ limit }, extra) => {
       try {
-        // Use tRPC client directly
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const products = await trpc.getFeaturedProducts.query({ limit });
 
         return {
@@ -363,8 +489,11 @@ export function addRetailTools(server: McpServer) {
       orderId: z.number().describe("Order ID to retrieve"),
       sessionId: z.string().optional().describe("Session ID for guest users"),
     },
-    async ({ orderId, sessionId }) => {
+    async ({ orderId, sessionId }, extra) => {
       try {
+        const authToken = await getAuthToken(extra);
+        const trpc = createAuthenticatedTRPCClient(authToken);
+        
         const order = await trpc.getOrder.query({ orderId });
 
         return {

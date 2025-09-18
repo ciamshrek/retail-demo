@@ -14,7 +14,7 @@ export async function seedData() {
       name: "Living Room",
       slug: "living-room",
       description: "Comfortable and stylish furniture for your living space",
-      imageUrl: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop"
+      imageUrl: "/big sectional.png"
     }
   });
 
@@ -23,7 +23,7 @@ export async function seedData() {
       name: "Bedroom",
       slug: "bedroom",
       description: "Create your perfect sanctuary with our bedroom collection",
-      imageUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop"
+      imageUrl: "/bedframe.png"
     }
   });
 
@@ -32,7 +32,7 @@ export async function seedData() {
       name: "Dining",
       slug: "dining",
       description: "Elegant dining furniture for memorable meals",
-      imageUrl: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop"
+      imageUrl: "/dinner table and chairs.png"
     }
   });
 
@@ -41,7 +41,7 @@ export async function seedData() {
       name: "Office",
       slug: "office",
       description: "Productive and comfortable workspace solutions",
-      imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop"
+      imageUrl: "/desk minimal.png"
     }
   });
 
@@ -50,7 +50,7 @@ export async function seedData() {
       name: "Lighting",
       slug: "lighting",
       description: "Beautiful lighting to illuminate your space",
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop"
+      imageUrl: "/vintage lamps.png"
     }
   });
 
@@ -73,12 +73,12 @@ export async function seedData() {
       categoryId: livingRoom.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop",
+          url: "/sectional sofa.png",
           altText: "Modern sectional sofa in charcoal fabric",
           sortOrder: 0
         },
         {
-          url: "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=800&h=600&fit=crop",
+          url: "/big sectional.png",
           altText: "Side view of sectional sofa",
           sortOrder: 1
         }
@@ -99,7 +99,7 @@ export async function seedData() {
       categoryId: livingRoom.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=800&h=600&fit=crop",
+          url: "/chair, and coffee table.png",
           altText: "Scandinavian coffee table in natural oak",
           sortOrder: 0
         }
@@ -121,7 +121,7 @@ export async function seedData() {
       categoryId: livingRoom.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+          url: "/chair, and coffee table.png",
           altText: "Emerald velvet accent chair",
           sortOrder: 0
         }
@@ -144,7 +144,7 @@ export async function seedData() {
       categoryId: bedroom.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop",
+          url: "/bedframe.png",
           altText: "Platform bed frame with linen headboard",
           sortOrder: 0
         }
@@ -164,7 +164,7 @@ export async function seedData() {
       categoryId: bedroom.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1493663284031-b7e3aaa4cab7?w=800&h=600&fit=crop",
+          url: "/shelf.png",
           altText: "Walnut nightstand with brass handles",
           sortOrder: 0
         }
@@ -188,7 +188,7 @@ export async function seedData() {
       categoryId: dining.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop",
+          url: "/dinner table and chairs.png",
           altText: "Live edge dining table with steel legs",
           sortOrder: 0
         }
@@ -208,7 +208,7 @@ export async function seedData() {
       categoryId: dining.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+          url: "/dinner table and chairs.png",
           altText: "Set of upholstered dining chairs",
           sortOrder: 0
         }
@@ -230,7 +230,7 @@ export async function seedData() {
       categoryId: office.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop",
+          url: "/desk minimal.png",
           altText: "Executive desk in natural oak",
           sortOrder: 0
         }
@@ -253,7 +253,7 @@ export async function seedData() {
       categoryId: lighting.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
+          url: "/vintage lamps.png",
           altText: "Modern pendant lights with brass finish",
           sortOrder: 0
         }
@@ -274,7 +274,7 @@ export async function seedData() {
       categoryId: lighting.id,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
+          url: "/lamp.png",
           altText: "Arc floor lamp with marble base",
           sortOrder: 0
         }

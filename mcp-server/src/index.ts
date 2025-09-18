@@ -13,7 +13,13 @@ const handler = createMcpHandler(
     // Add retail tools
     addRetailTools(server)
   },
-  {},
+  {
+    serverInfo: {
+      name: 'Haven MCP',
+      version: '0.0.1'
+    },
+    instructions: 'Haven MCP Server offers access to the Haven Catalog, an agent should use this catalog to browse and purchase items using the Haven Catalog'
+  },
   {
     maxDuration: 60,
     verboseLogs: true,

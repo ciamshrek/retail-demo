@@ -124,13 +124,38 @@ resource "auth0_client" "spa_app" {
 # Enable the SPA app for the Username-Password-Authentication connection
 resource "auth0_connection_clients" "username_password_clients" {
   connection_id   = auth0_connection.username_password_auth.id
-  enabled_clients = [auth0_client.spa_app.id]
+  enabled_clients = [
+    auth0_client.spa_app.id,
+    auth0_client.m2m_app.id,
+    "Wo1wpUlV0HIAmNM49QVOfxuVlQcIm7L7",
+    "WeR6TmL1mbcLpYjR2RmZxEBUgR4VNLWr"
+  ]
 }
 
 # Machine-to-Machine application for server-side operations (if needed)
 resource "auth0_client" "m2m_app" {
-  name        = "${var.app_name} M2M"
-  description = "Machine to Machine app for ${var.app_name} server operations"
+  name        = "${var.app_name} Associated App"
+  description = "Associated App for ${var.app_name} server operations"
+  app_type    = "regular_web"
+
+  jwt_configuration {
+    lifetime_in_seconds = 36000
+    secret_encoded      = false
+    alg                 = "RS256"
+  }
+
+  grant_types = ["client_credentials", "authorization_code"]
+
+  oidc_conformant = true
+  token_exchange {
+    allow_any_profile_of_type = ["custom_authentication"]
+  }
+}
+
+# M2M Client for Management API access (used by Actions)
+resource "auth0_client" "management_api_client" {
+  name        = "${var.app_name} Management API Client"
+  description = "M2M client for Auth0 Management API access from Actions"
   app_type    = "non_interactive"
 
   jwt_configuration {
@@ -149,16 +174,20 @@ resource "auth0_client_credentials" "m2m_credentials" {
   authentication_method = "client_secret_post"
 }
 
-# Grant M2M app access to the API
-resource "auth0_client_grant" "m2m_api_grant" {
-  client_id = auth0_client.m2m_app.id
-  audience  = auth0_resource_server.retail_api.identifier
+# Client credentials for Management API client
+resource "auth0_client_credentials" "management_api_credentials" {
+  client_id = auth0_client.management_api_client.id
 
+  authentication_method = "client_secret_post"
+}
+
+# Grant Management API access to the M2M client
+resource "auth0_client_grant" "management_api_grant" {
+  client_id = auth0_client.management_api_client.id
+  audience  = "https://${var.auth0_domain}/api/v2/"
+  
   scopes = [
-    "read:profile",
-    "write:cart",
-    "read:orders",
-    "write:orders"
+    "read:users",
   ]
 }
 
@@ -167,7 +196,7 @@ resource "auth0_action" "add_user_metadata" {
   name = "Add User Metadata to Token"
   code = file("${path.module}/actions/add-user-metadata.js")
 
-  runtime = "node18"
+  runtime = "node22"
 
   dependencies {
     name    = "uuid"
@@ -185,6 +214,89 @@ resource "auth0_action" "add_user_metadata" {
   }
 
   deploy = true
+}
+
+resource "auth0_action" "skyfire" {
+  name = "Skyfire Integration"
+  code = file("${path.module}/actions/skyfire-qa.js")
+
+  runtime = "node22"
+
+  dependencies {
+    name    = "jose"
+    version = "6.1.0"
+  }
+
+  dependencies {
+    name    = "validator"
+    version = "13.15.15"
+  }
+
+  dependencies {
+    name    = "auth0"
+    version = "5.0.0"
+  }
+
+  secrets {
+    name  = "SKYFIRE_API_KEY"
+    value = var.skyfire_key
+  }
+
+  secrets {
+    name  = "DOMAIN"
+    value = var.auth0_domain
+  }
+
+  secrets {
+    name  = "CLIENT_ID"
+    value = auth0_client.management_api_client.client_id
+  }
+
+  secrets {
+    name  = "CLIENT_SECRET"
+    value = auth0_client_credentials.management_api_credentials.client_secret
+  }
+
+  supported_triggers {
+    id      = "custom-token-exchange"
+    version = "v1"
+  }
+
+  deploy = true
+}
+
+resource "auth0_action" "servicetoservice" {
+  name = "Service to Service"
+  code = file("${path.module}/actions/service-to-service.js")
+
+  runtime = "node22"
+
+  dependencies {
+    name    = "jose"
+    version = "6.1.0"
+  }
+
+  supported_triggers {
+    id      = "custom-token-exchange"
+    version = "v1"
+  }
+
+  deploy = true
+}
+
+resource "auth0_token_exchange_profile" "service_to_service_binding" {
+  name = "MCP Server to API"
+  subject_token_type = "https://retail.auth101.dev/te/service-to-service"
+  action_id = auth0_action.servicetoservice.id
+  type = "custom_authentication"
+}
+
+
+resource "auth0_token_exchange_profile" "accept_skyfire" {
+  name = "Skyfire KYA to API"
+  subject_token_type = "https://retail.auth101.dev/te/skyfire-token"
+  action_id = auth0_action.skyfire.id
+  type = "custom_authentication"
 }
 
 # Bind the action to the post-login trigger

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "skyfire-buyer-service": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "AUTH0_DOMAIN": "your-tenant.us.auth0.com",
+        "ISSUER_BASE_URL": "https://your-tenant.us.auth0.com/",
+        "RESOURCE_URL": "https://your-domain.com/mcp",
+        "BUYER_API_KEY": "your-buyer-api-key",
+        "SKYFIRE_API_KEY": "your-skyfire-api-key",
+        "SKYFIRE_AGENT_ID": "your-agent-id"
+      }
+    }
+  }
+}

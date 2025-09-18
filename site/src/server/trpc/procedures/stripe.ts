@@ -3,14 +3,71 @@ import { baseProcedure, protectedProcedure } from "~/server/trpc/main";
 import { db } from "~/server/db";
 import { env } from "~/server/env";
 import Stripe from "stripe";
+import { verifyAuth0Token } from "~/server/auth/jwt";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
-// Helper function to get user from database using Auth0 ID
-async function getUserFromAuth0Id(auth0Id: string) {
-  return await db.user.findUnique({
+// Helper function to safely extract custom claims from JWT payload
+function extractUserInfoFromClaims(tokenPayload: unknown, audience: string) {
+  const claims = tokenPayload as Record<string, unknown>;
+  
+  // Helper to safely get string value
+  function getStringValue(value: unknown): string | null {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    return null;
+  }
+  
+  // Try to get values from custom claims first, then fallback to standard claims
+  const emailKey = `${audience}/email`;
+  const nameKey = `${audience}/name`;
+  const pictureKey = `${audience}/picture`;
+  
+  const email = getStringValue(claims[emailKey]) || getStringValue(claims.email) || "";
+  const name = getStringValue(claims[nameKey]) || getStringValue(claims.name);
+  const picture = getStringValue(claims[pictureKey]) || getStringValue(claims.picture);
+
+  return { email, name, picture };
+}
+
+// Helper function to get user from database using Auth0 ID, creating if not exists
+async function getUserFromAuth0Id(auth0Id: string, accessToken?: string) {
+  let user = await db.user.findUnique({
     where: { auth0Id },
   });
+
+  if (!user && accessToken) {
+    try {
+      // Extract user info from token claims instead of calling /userinfo
+      const tokenPayload = await verifyAuth0Token(accessToken);
+      const audience = env.VITE_AUTH0_AUDIENCE;
+      
+      const { email, name, picture } = extractUserInfoFromClaims(tokenPayload, audience);
+      
+      // Create user from token claims
+      user = await db.user.create({
+        data: {
+          auth0Id,
+          email,
+          name,
+          picture,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to extract user info from token:", error);
+      // Fallback: create user with minimal info
+      user = await db.user.create({
+        data: {
+          auth0Id,
+          email: "",
+          name: null,
+          picture: null,
+        },
+      });
+    }
+  }
+
+  return user;
 }
 
 export const stripeProcedures = {
@@ -29,7 +86,7 @@ export const stripeProcedures = {
       
       // If authenticated, get user from database
       if (ctx.isAuthenticated && ctx.user) {
-        user = await getUserFromAuth0Id(ctx.user.sub);
+        user = await getUserFromAuth0Id(ctx.user.sub, ctx.accessToken);
       }
       
       // For guest users, ensure we use the same sessionId logic as cart procedures
@@ -92,6 +149,7 @@ export const stripeProcedures = {
         mode: 'payment',
         success_url: input.successUrl,
         cancel_url: input.cancelUrl,
+        customer_email: user?.email || undefined, // Pre-populate email if user is authenticated
         metadata: {
           orderId: order.id.toString(),
           sessionId: input.sessionId || '',
@@ -201,7 +259,7 @@ export const stripeProcedures = {
       
       // If authenticated, get user from database
       if (ctx.isAuthenticated && ctx.user) {
-        user = await getUserFromAuth0Id(ctx.user.sub);
+        user = await getUserFromAuth0Id(ctx.user.sub, ctx.accessToken);
       }
       
       const order = await db.order.findFirst({

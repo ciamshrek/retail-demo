@@ -1,21 +1,24 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ShoppingBag, Menu, X, User, LogIn, LogOut, Minus, Plus } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, User, LogIn, LogOut, Minus, Plus, Package, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useTRPC } from "~/trpc/react";
 import { useAuthStore } from "~/stores/authStore";
 import { useCartStore, useCartItemCount } from "~/stores/cartStore";
+import { useAuth0Integration } from "~/hooks/useAuth0Integration";
 import toast from "react-hot-toast";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const navigate = useNavigate();
 
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { items, isOpen, toggleCart, removeItem, updateQuantity } = useCartStore();
   const cartItemCount = useCartItemCount();
+  const { loginWithRedirect, logout } = useAuth0Integration();
 
   const trpc = useTRPC();
   const searchSuggestions = useQuery(
@@ -33,27 +36,26 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate({ to: "/products", search: { search: searchQuery } });
+      void navigate({ to: "/products", search: { search: searchQuery } });
       setShowSearchSuggestions(false);
       setSearchQuery("");
     }
   };
 
   const handleSuggestionClick = (slug: string) => {
-    navigate({ to: `/products/${slug}` });
+    void navigate({ to: `/products/${slug}` });
     setShowSearchSuggestions(false);
     setSearchQuery("");
   };
 
   const handleLogin = () => {
-    // In a real app, this would redirect to Auth0 login
-    toast("Redirecting to login...", { icon: "🔐" });
-    // window.location.href = `https://${AUTH0_DOMAIN}/authorize?...`;
+    toast("Redirecting to Auth0 login...", { icon: "🔐" });
+    void loginWithRedirect();
   };
 
   const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully");
+    toast("Logging out...", { icon: "👋" });
+    void logout();
   };
 
   return (
@@ -76,16 +78,39 @@ export function Header() {
             >
               All Products
             </Link>
-            {categories.data?.slice(0, 4).map((category) => (
-              <Link
-                key={category.id}
-                to="/products"
-                search={{ categoryId: category.id }}
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+            
+            {/* Categories Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => setShowCategoriesDropdown(true)}
+                onMouseLeave={() => setShowCategoriesDropdown(false)}
+                className="flex items-center space-x-1 text-gray-700 hover:text-gray-900 font-medium transition-colors"
               >
-                {category.name}
-              </Link>
-            ))}
+                <span>Categories</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {/* Categories Dropdown Menu */}
+              {showCategoriesDropdown && (
+                <div 
+                  className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                  onMouseEnter={() => setShowCategoriesDropdown(true)}
+                  onMouseLeave={() => setShowCategoriesDropdown(false)}
+                >
+                  {categories.data?.map((category) => (
+                    <Link
+                      key={category.id}
+                      to="/products"
+                      search={{ categoryId: category.id }}
+                      className="block px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                      onClick={() => setShowCategoriesDropdown(false)}
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Search Bar */}
@@ -116,13 +141,13 @@ export function Header() {
                       {product.images[0] && (
                         <img
                           src={product.images[0].url}
-                          alt={product.images[0].altText}
+                          alt={product.images[0].altText || product.name}
                           className="w-10 h-10 object-cover rounded"
                         />
                       )}
                       <div>
                         <p className="font-medium text-gray-900">{product.name}</p>
-                        <p className="text-sm text-gray-600">${product.price}</p>
+                        <p className="text-sm text-gray-600">${product.price.toString()}</p>
                       </div>
                     </button>
                   ))}
@@ -252,6 +277,16 @@ export function Header() {
             <div className="flex items-center space-x-2">
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
+                  {/* Orders Link - temporarily disabled */}
+                  {/* <Link 
+                    to="/orders"
+                    className="hidden md:flex items-center space-x-1 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                    title="My Orders"
+                  >
+                    <Package className="w-4 h-4" />
+                    <span className="text-sm">Orders</span>
+                  </Link> */}
+                  
                   {user?.picture ? (
                     <img
                       src={user.picture}
@@ -317,6 +352,20 @@ export function Header() {
                   {category.name}
                 </Link>
               ))}
+              
+              {/* Orders link for mobile when authenticated - temporarily disabled */}
+              {/* 
+              {isAuthenticated && (
+                <Link 
+                  to="/orders"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Package className="w-4 h-4" />
+                  <span>My Orders</span>
+                </Link>
+              )}
+              */}
             </nav>
             
             {/* Mobile Search */}

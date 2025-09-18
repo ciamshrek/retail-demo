@@ -53,3 +53,21 @@ export async function verifyAuthorizationHeader(authorizationHeader?: string): P
   const token = extractTokenFromHeader(authorizationHeader);
   return verifyAuth0Token(token);
 }
+
+export async function fetchAuth0UserInfo(accessToken: string) {
+  try {
+    const userInfoResponse = await fetch(`https://${auth0Domain}/userinfo`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    
+    if (userInfoResponse.ok) {
+      return await userInfoResponse.json();
+    }
+  } catch (error) {
+    console.warn('Failed to fetch user info from Auth0:', error);
+  }
+  
+  return null;
+}

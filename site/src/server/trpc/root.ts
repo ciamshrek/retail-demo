@@ -8,6 +8,7 @@ import { db } from "~/server/db";
 import { authProcedures } from "./procedures/auth";
 import { cartProcedures } from "./procedures/cart";
 import { stripeProcedures } from "./procedures/stripe";
+import { orderProcedures } from "./procedures/orders";
 
 export const appRouter = createTRPCRouter({
   // Get all categories
@@ -205,6 +206,9 @@ export const appRouter = createTRPCRouter({
 
   // Cart procedures
   ...cartProcedures,
+
+  // Order procedures
+  ...orderProcedures,
 
   // Stripe procedures
   ...stripeProcedures,

@@ -1,7 +1,12 @@
 {
 	"servers": {
-		"local-mcp": {
+		"retail-mcp": {
 			"url": "http://localhost:3002/mcp",
+			"type": "http"
+		},
+
+		"agent-wallet": {
+			"url": "http://localhost:3003/mcp",
 			"type": "http"
 		}
 	},

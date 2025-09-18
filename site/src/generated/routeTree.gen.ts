@@ -9,12 +9,13 @@
 import { Route as rootRoute } from './../routes/__root'
 import { Route as IndexImport } from './../routes/index'
 import { Route as ProductsIndexImport } from './../routes/products/index'
+import { Route as OrdersIndexImport } from './../routes/orders/index'
 import { Route as CheckoutIndexImport } from './../routes/checkout/index'
 import { Route as CartIndexImport } from './../routes/cart/index'
 import { Route as ProductsSlugImport } from './../routes/products/$slug'
+import { Route as OrdersOrderIdImport } from './../routes/orders/$orderId'
 import { Route as CheckoutSuccessImport } from './../routes/checkout/success'
 import { Route as CheckoutCancelImport } from './../routes/checkout/cancel'
-import { Route as ApiStripeWebhookImport } from './../routes/api/stripe/webhook'
 
 // Create/Update Routes
 
@@ -27,6 +28,12 @@ const IndexRoute = IndexImport.update({
 const ProductsIndexRoute = ProductsIndexImport.update({
   id: '/products/',
   path: '/products/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const OrdersIndexRoute = OrdersIndexImport.update({
+  id: '/orders/',
+  path: '/orders/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -48,6 +55,12 @@ const ProductsSlugRoute = ProductsSlugImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const OrdersOrderIdRoute = OrdersOrderIdImport.update({
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const CheckoutSuccessRoute = CheckoutSuccessImport.update({
   id: '/checkout/success',
   path: '/checkout/success',
@@ -57,12 +70,6 @@ const CheckoutSuccessRoute = CheckoutSuccessImport.update({
 const CheckoutCancelRoute = CheckoutCancelImport.update({
   id: '/checkout/cancel',
   path: '/checkout/cancel',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ApiStripeWebhookRoute = ApiStripeWebhookImport.update({
-  id: '/api/stripe/webhook',
-  path: '/api/stripe/webhook',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -91,6 +98,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessImport
       parentRoute: typeof rootRoute
     }
+    '/orders/$orderId': {
+      id: '/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof OrdersOrderIdImport
+      parentRoute: typeof rootRoute
+    }
     '/products/$slug': {
       id: '/products/$slug'
       path: '/products/$slug'
@@ -112,18 +126,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutIndexImport
       parentRoute: typeof rootRoute
     }
+    '/orders/': {
+      id: '/orders/'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/products/': {
       id: '/products/'
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsIndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/api/stripe/webhook': {
-      id: '/api/stripe/webhook'
-      path: '/api/stripe/webhook'
-      fullPath: '/api/stripe/webhook'
-      preLoaderRoute: typeof ApiStripeWebhookImport
       parentRoute: typeof rootRoute
     }
   }
@@ -135,22 +149,24 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/cart': typeof CartIndexRoute
   '/checkout': typeof CheckoutIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/cart': typeof CartIndexRoute
   '/checkout': typeof CheckoutIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 
 export interface FileRoutesById {
@@ -158,11 +174,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/cart/': typeof CartIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
-  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 
 export interface FileRouteTypes {
@@ -171,31 +188,34 @@ export interface FileRouteTypes {
     | '/'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/orders/$orderId'
     | '/products/$slug'
     | '/cart'
     | '/checkout'
+    | '/orders'
     | '/products'
-    | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/orders/$orderId'
     | '/products/$slug'
     | '/cart'
     | '/checkout'
+    | '/orders'
     | '/products'
-    | '/api/stripe/webhook'
   id:
     | '__root__'
     | '/'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/orders/$orderId'
     | '/products/$slug'
     | '/cart/'
     | '/checkout/'
+    | '/orders/'
     | '/products/'
-    | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
 
@@ -203,22 +223,24 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CartIndexRoute: typeof CartIndexRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
-  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  OrdersOrderIdRoute: OrdersOrderIdRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CartIndexRoute: CartIndexRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
-  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 
 export const routeTree = rootRoute
@@ -234,11 +256,12 @@ export const routeTree = rootRoute
         "/",
         "/checkout/cancel",
         "/checkout/success",
+        "/orders/$orderId",
         "/products/$slug",
         "/cart/",
         "/checkout/",
-        "/products/",
-        "/api/stripe/webhook"
+        "/orders/",
+        "/products/"
       ]
     },
     "/": {
@@ -250,6 +273,9 @@ export const routeTree = rootRoute
     "/checkout/success": {
       "filePath": "checkout/success.tsx"
     },
+    "/orders/$orderId": {
+      "filePath": "orders/$orderId.tsx"
+    },
     "/products/$slug": {
       "filePath": "products/$slug.tsx"
     },
@@ -259,11 +285,11 @@ export const routeTree = rootRoute
     "/checkout/": {
       "filePath": "checkout/index.tsx"
     },
+    "/orders/": {
+      "filePath": "orders/index.tsx"
+    },
     "/products/": {
       "filePath": "products/index.tsx"
-    },
-    "/api/stripe/webhook": {
-      "filePath": "api/stripe/webhook.tsx"
     }
   }
 }

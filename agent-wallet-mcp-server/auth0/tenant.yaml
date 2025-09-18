@@ -1,0 +1,63 @@
+tenant:
+  enabled_locales:
+    - en
+  flags:
+    enable_client_connections: true
+    enable_dynamic_client_registration: true
+  default_audience: "@@RESOURCE_URL@@"
+  default_directory: "Username-Password-Authentication"
+
+databases:
+  - name: "Username-Password-Authentication"
+    strategy: "auth0"
+    enabled_clients:
+      - "Default App"
+    is_domain_connection: true
+    options:
+      enabledDatabaseCustomization: false
+
+clients:
+  # Fictional Default application
+  - name: "Default App"
+    description: "Default application for Math Operations"
+    app_type: "spa"
+    logo_uri: ""
+    callbacks:
+      - "http://localhost:3000/callback"
+    allowed_origins:
+      - "http://localhost:3000"
+    web_origins:
+      - "http://localhost:3000"
+    allowed_logout_urls:
+      - "http://localhost:3000"
+    grant_types:
+      - "authorization_code"
+      - "refresh_token"
+    jwt_configuration:
+      alg: "RS256"
+    client_metadata: {}
+    cross_origin_auth: false
+    custom_login_page_on: true
+    is_first_party: true
+    oidc_conformant: true
+    sso_disabled: false
+    token_endpoint_auth_method: "none"
+
+resourceServers:
+  - name: "Wallet MCP"
+    identifier: "@@RESOURCE_URL@@"
+    allow_offline_access: true
+    skip_consent_for_verifiable_first_party_clients: true
+    token_lifetime: 86400
+    token_lifetime_for_web: 7200
+    signing_alg: "RS256"
+    scopes:
+      - value: "skyfire:create-token"
+        description: "Create Skyfire tokens"
+      - value: "skyfire:get-services"
+        description: "Get Skyfire services"
+      - value: "skyfire:wallet-balance"
+        description: "Get wallet balance"
+      - value: "skyfire:token-management"
+        description: "Manage Skyfire tokens"
+    enforce_policies: true

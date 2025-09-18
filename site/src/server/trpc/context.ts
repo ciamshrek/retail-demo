@@ -1,8 +1,9 @@
-import { verifyAuthorizationHeader, type Auth0User } from "../auth/jwt";
+import { verifyAuthorizationHeader, extractTokenFromHeader, type Auth0User } from "../auth/jwt";
 
 export interface TRPCContext {
   user?: Auth0User;
   isAuthenticated: boolean;
+  accessToken?: string;
 }
 
 export async function createTRPCContext(request: Request): Promise<TRPCContext> {
@@ -13,9 +14,11 @@ export async function createTRPCContext(request: Request): Promise<TRPCContext> 
     }
 
     const user = await verifyAuthorizationHeader(authHeader);
+    const accessToken = extractTokenFromHeader(authHeader);
     return {
       user,
       isAuthenticated: true,
+      accessToken,
     };
   } catch (error) {
     console.warn("Authentication failed:", error);
