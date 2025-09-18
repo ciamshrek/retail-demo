@@ -233,8 +233,8 @@ const handler = createMcpHandler(
     // );
 
     server.tool(
-      "wallet-get-services",
-      "Get all available services from marketplace",
+      "find-services",
+      "Find all available service providers",
       {},
       async () => {
         try {
@@ -256,8 +256,8 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "wallet-get-service-tags",
-      "Get all available service tags to help filter services",
+      "get-service-categories",
+      "Get available service categories and tags",
       {},
       async () => {
         try {
@@ -279,10 +279,10 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "wallet-get-services-by-tags",
-      "Search for services by specific tags",
+      "find-services-by-category",
+      "Find services by specific categories or tags",
       {
-        tags: z.array(z.string()).describe("Array of tags to search for"),
+        tags: z.array(z.string()).describe("Categories or tags to search for"),
       },
       async ({ tags }) => {
         try {
@@ -306,8 +306,8 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "wallet-get-balance",
-      "Get current wallet balance",
+      "check-wallet-balance",
+      "Check current wallet balance",
       {},
       async () => {
         try {
@@ -379,8 +379,8 @@ const handler = createMcpHandler(
     // );
 
     server.tool(
-      "wallet-search-mcp-services",
-      "Search for MCP-compatible services in marketplace",
+      "find-mcp-services",
+      "Find services that support AI agents and tools",
       {
         query: z
           .string()
@@ -389,7 +389,7 @@ const handler = createMcpHandler(
         tags: z
           .array(z.string())
           .optional()
-          .describe("Optional tags to filter MCP services"),
+          .describe("Optional categories to filter by"),
       },
       async ({ query, tags }) => {
         try {
@@ -748,9 +748,9 @@ const handler = createMcpHandler(
     // Dynamic MCP tools - connect-call-discard pattern
     server.tool(
       "discover-provider",
-      "Discover tools available from a service provider",
+      "See what tools a service provider offers",
       {
-        serviceId: z.string().describe("Service ID from marketplace"),
+        serviceId: z.string().describe("Service provider ID"),
       },
       {
         title: 'Discover Provider'
@@ -779,7 +779,7 @@ const handler = createMcpHandler(
             const allServices = servicesResponse.data || servicesResponse;
             const service = allServices.find((s: any) => s.id === serviceId);
             if (!service) {
-              throw new Error(`Service ${serviceId} not found in marketplace`);
+              throw new Error(`Service provider ${serviceId} not found`);
             }
             
             if (service.type !== "MCP_SERVER_REMOTE" || !service.mcpServerUrl) {
@@ -871,12 +871,12 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "interact-with-provider",
-      "Call a tool from a service provider",
+      "use-service",
+      "Use a tool from a service provider",
       {
-        serviceId: z.string().describe("Service ID from marketplace"),
-        toolName: z.string().describe("Name of the tool to call"),
-        arguments: z.record(z.any()).describe("Arguments to pass to the tool"),
+        serviceId: z.string().describe("Service provider ID"),
+        toolName: z.string().describe("Name of the tool to use"),
+        arguments: z.record(z.any()).describe("Tool parameters"),
       },
       {
         title: 'Interact with Provider'
@@ -905,7 +905,7 @@ const handler = createMcpHandler(
             const allServices = servicesResponse.data || servicesResponse;
             const service = allServices.find((s: any) => s.id === serviceId);
             if (!service) {
-              throw new Error(`Service ${serviceId} not found in marketplace`);
+              throw new Error(`Service provider ${serviceId} not found`);
             }
             
             if (service.type !== "MCP_SERVER_REMOTE" || !service.mcpServerUrl) {
@@ -1005,9 +1005,9 @@ app.get("/.well-known/oauth-protected-resource", (c) => {
           "openid",
           "profile",
           "wallet:create-token",
-          "wallet:get-services",
+          "wallet:find-services",
           "wallet:balance",
-          "wallet:token-management",
+          "wallet:use-services",
         ],
       },
     })
@@ -1023,24 +1023,24 @@ app.all("/mcp/*", async (c) => {
 app.get("/", (c) => {
   return c.json({
     message:
-      "Agent Wallet MCP Server - Service Provider Integration with Auth0",
+      "Agent Wallet - Find and use service providers",
     endpoints: {
       mcp: "/mcp",
       description:
-        "MCP server with wallet service tools for marketplace interactions",
+        "Connect to service providers through your agent wallet",
     },
     tools: [
-      "wallet-get-services",
-      "wallet-get-service-tags", 
-      "wallet-get-services-by-tags",
-      "wallet-get-balance",
-      "wallet-search-mcp-services",
+      "find-services",
+      "get-service-categories", 
+      "find-services-by-category",
+      "check-wallet-balance",
+      "find-mcp-services",
       "discover-provider",
-      "interact-with-provider",
+      "use-service",
     ],
     wallet: {
-      description: "Agent wallet for marketplace service interactions",
-      capabilities: ["service discovery", "secure payments", "token management"],
+      description: "Your agent's wallet for accessing services",
+      capabilities: ["find services", "pay securely", "use tools"],
     },
   });
 });
