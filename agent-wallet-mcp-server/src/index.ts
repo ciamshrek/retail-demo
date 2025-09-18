@@ -821,6 +821,7 @@ const handler = createMcpHandler(
             {
               url: mcpServerUrl,
               name: serviceName,
+              serviceId: serviceId,
             },
             cachedToken!
           );
@@ -943,6 +944,7 @@ const handler = createMcpHandler(
             {
               url: mcpServerUrl,
               name: serviceName,
+              serviceId: serviceId,
             },
             cachedToken!
           );

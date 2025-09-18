@@ -9,10 +9,7 @@ export class TokenCache {
   private redis: Redis;
 
   constructor() {
-    this.redis = new Redis(env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-    });
+    this.redis = new Redis(env.REDIS_URL);
 
     this.redis.on('error', (err: Error) => {
       console.warn('[TokenCache] Redis error:', err);

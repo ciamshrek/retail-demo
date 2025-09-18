@@ -160,8 +160,19 @@ export function addRetailTools(server: McpServer) {
         const skyfireAct = extra?.authInfo?.extra?.[`${audiencePrefix}skyfire_act`];
         
         if (skyfireAct) {
-          console.log(`🚫 CHECKOUT BLOCKED: Proxy agent detected with skyfire_act: ${skyfireAct}`);
-          throw new McpError(402, "Proxy agents are not allowed to checkout yet");
+          console.log(`� CHECKOUT: Proxy agent detected with skyfire_act: ${skyfireAct}`);
+          
+          // Check if payment authorization is provided
+          const paymentAuthorization = extra?.authInfo?.extra?.paymentAuthorization;
+          
+          if (!paymentAuthorization) {
+            console.log(`🚫 CHECKOUT BLOCKED: Proxy agent without payment authorization`);
+            throw new McpError(402, "Payment required for proxy agents. This checkout operation costs $0.10");
+          }
+          
+          console.log(`💳 CHECKOUT: Payment authorization provided for proxy agent`);
+          // TODO: Here you could add additional validation of the Skyfire payment token
+          // For now, we'll allow the checkout to proceed if payment auth is present
         }
 
         const authToken = await getAuthToken(extra);
