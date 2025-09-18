@@ -801,10 +801,6 @@ app.get("/", (c) => {
         "MCP server with Skyfire buyer service tools and math operations",
     },
     tools: [
-      "add",
-      "subtract",
-      "multiply",
-      "divide",
       "skyfire-create-kya-token",
       "skyfire-create-pay-token",
       "skyfire-create-kya-payment-token",
