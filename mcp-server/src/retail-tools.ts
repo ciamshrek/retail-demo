@@ -198,7 +198,8 @@ export function addRetailTools(server: McpServer) {
 
           return {
             content: [
-              { type: "text", text: `Order created successfully! Order ID: ${skyfireOrder.orderId}. Total: $${skyfireOrder.total.toFixed(2)}. Items: ${skyfireOrder.itemCount || 0}. Payment processed via Skyfire (${skyfireOrder.skyfireAct || 'direct'}). Your items will be processed and shipped soon.` },
+              { type: "text", text: `Order created successfully! Order ID: ${skyfireOrder.orderId}. Total: $${skyfireOrder.total.toNumber().toFixed(2)}. Items: ${skyfireOrder.itemCount || 0}. Payment processed via Skyfire (${skyfireOrder.skyfireAct || 'direct'}). Your items will be processed and shipped soon.` },
+              { type: "text", text: `Here is your tracker link: ${trpcAudience}/orders/${skyfireOrder.id}` }
             ]
           };
         }

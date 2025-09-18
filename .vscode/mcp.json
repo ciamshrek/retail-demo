@@ -8,7 +8,7 @@
 		"agent-wallet": {
 			"url": "http://localhost:3003/mcp",
 			"type": "http"
-		}
+		},
 	},
 	"inputs": []
 }
