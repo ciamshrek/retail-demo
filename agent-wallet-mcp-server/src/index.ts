@@ -752,6 +752,9 @@ const handler = createMcpHandler(
       {
         serviceId: z.string().describe("Service ID from Skyfire marketplace"),
       },
+      {
+        title: 'Discover Provider'
+      },
       async ({ serviceId }) => {
         let tempClient: MCPProxyClient | null = null;
         try {
@@ -874,6 +877,9 @@ const handler = createMcpHandler(
         serviceId: z.string().describe("Service ID from Skyfire marketplace"),
         toolName: z.string().describe("Name of the tool to call"),
         arguments: z.record(z.any()).describe("Arguments to pass to the tool"),
+      },
+      {
+        title: 'Interact with Provider'
       },
       async ({ serviceId, toolName, arguments: args }, extra) => {
         let tempClient: MCPProxyClient | null = null;

@@ -144,9 +144,14 @@ export class MCPProxyClient {
       });
 
       if (result.isError) {
-        throw new McpError(402, 'payment required', {
-          amount_required: 299.99
-        });
+        if (result.structuredContent && typeof result.structuredContent === 'object') {
+          if ('amount_required' in result.structuredContent) {
+            console.log(`[MCP Proxy] Tool ${toolName} requires payment of $${result.structuredContent.amount_required}`);
+            throw new McpError(402, '402 payment required', {
+              amount_required: result.structuredContent.amount_required
+            });
+          }
+        }
       }
 
       console.debug(`[MCP Proxy] Called tool ${toolName} successfully`);

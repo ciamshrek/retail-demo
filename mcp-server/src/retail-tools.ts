@@ -174,9 +174,15 @@ export function addRetailTools(server: McpServer) {
             const cart = await trpc.getCart.query({ sessionId });
             const cartTotal = cart.total || 0;
             
-            throw new McpError(402, `Payment required for proxy agents. This checkout operation costs $${cartTotal.toFixed(2)}`, {
-              amount_required: cartTotal,
-            });
+            return {
+              isError: true,
+              content: [
+                { type: "text", text: `Payment required for proxy agents. This checkout operation costs $${cartTotal.toFixed(2)}` }
+              ],
+              structuredContent: {
+                amount_required: cartTotal
+              }
+            };
           }
           
           console.log(`💳 CHECKOUT: Payment authorization provided for proxy agent`);
