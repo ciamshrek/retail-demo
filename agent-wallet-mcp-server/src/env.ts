@@ -44,18 +44,12 @@ export const environmentVariablesSchema = z.object({
     .string()
     .describe("The Auth0 client secret for token exchange"),
 
-  REDIS_URL: z
-    .string()
-    .url()
-    .optional()
-    .describe("Redis connection URL (legacy, optional)"),
-
-  KV_REST_API_URL: z
+  REDIS_API_URL: z
     .string()
     .url()
     .describe("Upstash Redis REST API URL (provided by Vercel)"),
 
-  KV_REST_API_TOKEN: z
+  REDIS_TOKEN: z
     .string()
     .describe("Upstash Redis REST API token (provided by Vercel)"),
 

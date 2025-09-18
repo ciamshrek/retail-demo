@@ -10,8 +10,8 @@ export class TokenCache {
 
   constructor() {
     this.redis = new Redis({
-      url: env.KV_REST_API_URL,
-      token: env.KV_REST_API_TOKEN,
+      url: env.REDIS_API_URL,
+      token: env.REDIS_TOKEN,
     });
   }
 
