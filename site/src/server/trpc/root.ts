@@ -9,6 +9,7 @@ import { authProcedures } from "./procedures/auth";
 import { cartProcedures } from "./procedures/cart";
 import { stripeProcedures } from "./procedures/stripe";
 import { orderProcedures } from "./procedures/orders";
+import { skyfireProcedures } from "./procedures/skyfire";
 
 export const appRouter = createTRPCRouter({
   // Get all categories
@@ -212,6 +213,9 @@ export const appRouter = createTRPCRouter({
 
   // Stripe procedures
   ...stripeProcedures,
+
+  // Skyfire procedures
+  ...skyfireProcedures,
 });
 
 export type AppRouter = typeof appRouter;

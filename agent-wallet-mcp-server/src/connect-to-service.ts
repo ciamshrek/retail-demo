@@ -8,6 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SkyfireAPIClient, TokenType } from "./skyfire.js";
 import { env } from "./env.js";
+import { McpError } from "@modelcontextprotocol/sdk/types.js";
 
 interface MCPServiceConfig {
   url: string;
@@ -156,17 +157,8 @@ export class MCPProxyClient {
         }
 
         try {
-          // Try to parse payment amount from error message
-          let paymentAmount = this.parsePaymentAmountFromError(error);
-          
-          // Fallback to default amount if parsing fails
-          if (!paymentAmount) {
-            paymentAmount = this.getPaymentAmountForTool(toolName, args);
-            console.log(`[MCP Proxy] Could not parse payment amount from error, using default: $${paymentAmount}`);
-          } else {
-            console.log(`[MCP Proxy] Parsed payment amount from error: $${paymentAmount}`);
-          }
-          
+          const mcpError = error as McpError; 
+          const paymentAmount = (mcpError.data as any)?.amount_required;
           console.log(`[MCP Proxy] Creating payment token for $${paymentAmount} to service ${this.serviceConfig.serviceId}`);
           
           const tokenResult = await this.skyfireAPI.createToken({
@@ -245,78 +237,6 @@ export class MCPProxyClient {
     }
   }
 
-  /**
-   * Parse payment amount from 402 error message
-   * Supports various formats like:
-   * - "Payment required: $0.10"
-   * - "This operation costs $0.05"
-   * - "Price: 0.15 USD"
-   * - "Amount: 0.25"
-   */
-  private parsePaymentAmountFromError(error: any): number | null {
-    try {
-      // Get error message from various possible locations
-      const errorMessage = error.message || error.data?.message || error.toString() || '';
-      console.log(`[MCP Proxy] Parsing payment amount from error: ${errorMessage}`);
-      
-      // Common patterns for extracting dollar amounts
-      const patterns = [
-        /\$(\d+\.?\d*)/,                    // $0.10, $5, $0.05
-        /(\d+\.?\d*)\s*USD/i,               // 0.10 USD, 5 USD
-        /(\d+\.?\d*)\s*dollars?/i,          // 0.10 dollars, 5 dollar
-        /price:?\s*\$?(\d+\.?\d*)/i,        // Price: $0.10, price 0.10
-        /cost:?\s*\$?(\d+\.?\d*)/i,         // Cost: $0.10, cost 0.10
-        /amount:?\s*\$?(\d+\.?\d*)/i,       // Amount: $0.10, amount 0.10
-        /(\d+\.?\d*)\s*cents?/i,            // 10 cents (converted to dollars)
-      ];
-      
-      for (const pattern of patterns) {
-        const match = errorMessage.match(pattern);
-        if (match && match[1]) {
-          let amount = parseFloat(match[1]);
-          
-          // Convert cents to dollars if the pattern indicates cents
-          if (pattern.source.includes('cents?')) {
-            amount = amount / 100;
-          }
-          
-          // Validate the amount is reasonable (between $0.01 and $100)
-          if (amount >= 0.01 && amount <= 100) {
-            console.log(`[MCP Proxy] Successfully parsed payment amount: $${amount}`);
-            return amount;
-          } else {
-            console.warn(`[MCP Proxy] Parsed amount $${amount} is outside reasonable range, ignoring`);
-          }
-        }
-      }
-      
-      console.log(`[MCP Proxy] Could not parse payment amount from error message`);
-      return null;
-    } catch (parseError) {
-      console.warn(`[MCP Proxy] Error parsing payment amount:`, parseError);
-      return null;
-    }
-  }
-
-  /**
-   * Determine payment amount for a tool call
-   * In production, this should be configurable or negotiated with the service
-   */
-  private getPaymentAmountForTool(toolName: string, args: any): number {
-    // Default payment amounts based on tool type
-    const defaultAmounts: Record<string, number> = {
-      'checkout': 0.10, // $0.10 for checkout operations
-      'add_to_cart': 0.01, // $0.01 for cart operations
-      'search_products': 0.02, // $0.02 for search operations
-      'get_product': 0.01, // $0.01 for product details
-      'get_categories': 0.01, // $0.01 for categories
-      'get_cart': 0.01, // $0.01 for cart viewing
-      'get_featured_products': 0.01, // $0.01 for featured products
-      'get_order': 0.02, // $0.02 for order status
-    };
-
-    return defaultAmounts[toolName] || 0.05; // Default $0.05 for unknown tools
-  }
 
   /**
    * Get connection status

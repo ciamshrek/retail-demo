@@ -34,10 +34,11 @@ export class TokenCache {
   async getToken(serviceId: string): Promise<string | null> {
     try {
       const key = `mcp:token:${serviceId}`;
-      const token = await this.redis.get(key);
-      if (token) {
+      const tokenData = await this.redis.get(key);
+      if (tokenData) {
         console.log(`[TokenCache] Retrieved cached token for service ${serviceId}`);
-        return token as string;
+        // Upstash Redis should return tokens as strings, but let's be safe
+        return typeof tokenData === 'string' ? tokenData : String(tokenData);
       }
       return null;
     } catch (error) {
@@ -78,9 +79,15 @@ export class TokenCache {
   async getServiceConfig(serviceId: string): Promise<any | null> {
     try {
       const key = `mcp:config:${serviceId}`;
-      const configStr = await this.redis.get(key);
-      if (configStr) {
-        return JSON.parse(configStr as string);
+      const configData = await this.redis.get(key);
+      if (configData) {
+        // Upstash Redis might return the data as a string or already parsed object
+        if (typeof configData === 'string') {
+          return JSON.parse(configData);
+        } else {
+          // If it's already an object, return it directly
+          return configData;
+        }
       }
       return null;
     } catch (error) {

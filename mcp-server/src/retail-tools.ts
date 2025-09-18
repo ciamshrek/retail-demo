@@ -167,14 +167,38 @@ export function addRetailTools(server: McpServer) {
           
           if (!paymentAuthorization) {
             console.log(`🚫 CHECKOUT BLOCKED: Proxy agent without payment authorization`);
-            throw new McpError(402, "Payment required for proxy agents. This checkout operation costs $0.10");
+            
+            // Get cart total to determine payment amount
+            const authToken = await getAuthToken(extra);
+            const trpc = createAuthenticatedTRPCClient(authToken);
+            const cart = await trpc.getCart.query({ sessionId });
+            const cartTotal = cart.total || 0;
+            
+            throw new McpError(402, `Payment required for proxy agents. This checkout operation costs $${cartTotal.toFixed(2)}`, {
+              amount_required: cartTotal,
+            });
           }
           
           console.log(`💳 CHECKOUT: Payment authorization provided for proxy agent`);
-          // TODO: Here you could add additional validation of the Skyfire payment token
-          // For now, we'll allow the checkout to proceed if payment auth is present
+          
+          // For proxy agents with payment authorization, create the Skyfire order directly
+          const authToken = await getAuthToken(extra);
+          const trpc = createAuthenticatedTRPCClient(authToken);
+          
+          const skyfireOrder = await trpc.createSkyfireOrder.mutate({
+            sessionId: sessionId,
+            paymentToken: paymentAuthorization,
+            skyfireAct: skyfireAct
+          });
+
+          return {
+            content: [
+              { type: "text", text: `Order created successfully! Order ID: ${skyfireOrder.orderId}. Your items will be processed and shipped soon.` },
+            ]
+          };
         }
 
+        // For regular users (non-proxy agents), use the standard checkout flow
         const authToken = await getAuthToken(extra);
         const trpc = createAuthenticatedTRPCClient(authToken);
         
