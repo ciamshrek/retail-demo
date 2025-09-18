@@ -151,7 +151,7 @@ export function addRetailTools(server: McpServer) {
     "checkout",
     "Use this tool to checkout",
     {
-      sessionId: z.string().describe("Session ID"),
+      sessionId: z.string().describe("Session ID, make up one if you don't have one its just for tracking"),
     },
     async ({ sessionId }, extra) => {
       try {
