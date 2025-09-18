@@ -61,7 +61,8 @@ export async function validateJWT(
 
 export async function auth0(req: Request): Promise<AuthInfo | undefined> {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-
+  const paymentAuthorization = req.headers.get("Payment-Authorization")?.replace("Bearer+Skyfire", "");
+ 
   if (!token) {
     console.log("No authorization token found");
     return undefined;
@@ -82,7 +83,8 @@ export async function auth0(req: Request): Promise<AuthInfo | undefined> {
       expiresAt,
       resource,
       extra: {
-        ...rest
+        ...rest,
+        paymentAuthorization: paymentAuthorization
       },
     };
   } catch (error) {

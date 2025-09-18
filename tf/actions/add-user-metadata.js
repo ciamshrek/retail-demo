@@ -15,14 +15,19 @@ exports.onExecutePostLogin = async (event, api) => {
     api.accessToken.setCustomClaim(`${audience}/name`, user.name);
     api.accessToken.setCustomClaim(`${audience}/picture`, user.picture);
     
-    // Add app metadata if it exists
-    if (user.app_metadata) {
-      api.accessToken.setCustomClaim(`${audience}/app_metadata`, user.app_metadata);
-    }
-    
-    // Add user metadata if it exists
-    if (user.user_metadata) {
-      api.accessToken.setCustomClaim(`${audience}/user_metadata`, user.user_metadata);
+    // Decode subject_token if present and add skyfire_act claim
+    if (event.request && event.request.body && event.request.body.subject_token) {
+      try {
+        // Decode JWT without verification (since it was already validated in custom token exchange)
+        const base64Payload = event.request.body.subject_token.split('.')[1];
+        const decodedPayload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf8'));
+        
+        if (decodedPayload.sub) {
+          api.accessToken.setCustomClaim(`${audience}/skyfire_act`, decodedPayload.sub);
+        }
+      } catch (error) {
+        console.log('Error decoding subject_token:', error.message);
+      }
     }
   }
 
@@ -32,6 +37,6 @@ exports.onExecutePostLogin = async (event, api) => {
   api.idToken.setCustomClaim(`${audience}/name`, user.name);
   api.idToken.setCustomClaim(`${audience}/picture`, user.picture);
   
-  // Set last login time
-  api.user.setUserMetadata('last_login', new Date().toISOString());
+
+  
 };

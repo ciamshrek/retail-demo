@@ -5,6 +5,7 @@ import SuperJSON from "superjson";
 import type { AppRouter } from "../../site/src/server/trpc/root.js";
 import { exchangeTokenForAudience, type TokenExchangeResponse } from "./auth0.js";
 import { env } from "./env.js";
+import { McpError } from "@modelcontextprotocol/sdk/types.js";
 
 const serverUrl = env.API_SERVER_URL;
 const trpcAudience = env.API_SERVER_AUDIENCE;
@@ -150,15 +151,24 @@ export function addRetailTools(server: McpServer) {
     "checkout",
     "Use this tool to checkout",
     {
-      sessionId: z.string().optional().describe("Session ID"),
+      sessionId: z.string().describe("Session ID"),
     },
     async ({ sessionId }, extra) => {
       try {
+        // Check if this is a proxy agent (has skyfire_act claim)
+        const audiencePrefix = `${trpcAudience}/`;
+        const skyfireAct = extra?.authInfo?.extra?.[`${audiencePrefix}skyfire_act`];
+        
+        if (skyfireAct) {
+          console.log(`🚫 CHECKOUT BLOCKED: Proxy agent detected with skyfire_act: ${skyfireAct}`);
+          throw new McpError(402, "Proxy agents are not allowed to checkout yet");
+        }
+
         const authToken = await getAuthToken(extra);
         const trpc = createAuthenticatedTRPCClient(authToken);
         
         const result = await trpc.createCheckoutSession.mutate({
-          sessionId: sessionId || DEFAULT_SESSION_ID,
+          sessionId: sessionId,
           successUrl: `${env.API_SERVER_URL}/checkout/success`,
           cancelUrl: `${env.API_SERVER_URL}/checkout/cancel`
         });

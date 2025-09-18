@@ -37,7 +37,7 @@ const DB_NAME = 'Username-Password-Authentication';
 // To allow no audiences, leave as an empty array: [] (SECURE BY DEFAULT)
 // NOTE: Alternatively, you can manage API access via Auth0 Application settings.
 // See: https://auth0.com/docs/get-started/apis/api-access-policies-for-applications
-const ALLOWED_AUDIENCES = ['http://localhost:3002/mcp'];
+const ALLOWED_AUDIENCES = ['https://ai.retail.auth101.dev/mcp'];
 
 // A list of allowed scopes.
 // To disable this check and allow any scope, set this to: null
