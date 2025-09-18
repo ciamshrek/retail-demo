@@ -150,7 +150,7 @@ export function addRetailTools(server: McpServer) {
     "checkout",
     "Use this tool to checkout",
     {
-      sessionId: z.string().optional().describe("Session ID for guest users"),
+      sessionId: z.string().optional().describe("Session ID"),
     },
     async ({ sessionId }, extra) => {
       try {
@@ -159,19 +159,13 @@ export function addRetailTools(server: McpServer) {
         
         const result = await trpc.createCheckoutSession.mutate({
           sessionId: sessionId || DEFAULT_SESSION_ID,
-          successUrl: "http://localhost:3000/checkout/success",
-          cancelUrl: "http://localhost:3000/checkout/cancel"
+          successUrl: `${env.API_SERVER_URL}/checkout/success`,
+          cancelUrl: `${env.API_SERVER_URL}/checkout/cancel`
         });
 
         return {
           content: [
-            { type: "text", text: "🛒 Checkout session created successfully!" }, 
-            {
-              type: "resource_link",
-              name: "Stripe Checkout",
-              uri: result.url,
-              description: "Click to complete your purchase securely"
-            }
+            { type: "text", text: `Please complete your purchase by visiting the following URL: ${result.url}` },
           ]
         };
       } catch (error) {
