@@ -52,12 +52,12 @@ resourceServers:
     token_lifetime_for_web: 7200
     signing_alg: "RS256"
     scopes:
-      - value: "skyfire:create-token"
-        description: "Create Skyfire tokens"
-      - value: "skyfire:get-services"
-        description: "Get Skyfire services"
-      - value: "skyfire:wallet-balance"
-        description: "Get wallet balance"
-      - value: "skyfire:token-management"
-        description: "Manage Skyfire tokens"
+      - value: "wallet:create-token"
+        description: "Create wallet tokens for service access"
+      - value: "wallet:get-services"
+        description: "Discover and list marketplace services"
+      - value: "wallet:balance"
+        description: "Check wallet balance and transaction history"
+      - value: "wallet:token-management"
+        description: "Manage wallet tokens and authentication"
     enforce_policies: true

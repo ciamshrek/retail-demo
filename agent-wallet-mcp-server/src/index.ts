@@ -233,8 +233,8 @@ const handler = createMcpHandler(
     // );
 
     server.tool(
-      "skyfire-get-services",
-      "Get all available services from Skyfire marketplace",
+      "wallet-get-services",
+      "Get all available services from marketplace",
       {},
       async () => {
         try {
@@ -256,7 +256,7 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "skyfire-get-service-tags",
+      "wallet-get-service-tags",
       "Get all available service tags to help filter services",
       {},
       async () => {
@@ -279,7 +279,7 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "skyfire-get-services-by-tags",
+      "wallet-get-services-by-tags",
       "Search for services by specific tags",
       {
         tags: z.array(z.string()).describe("Array of tags to search for"),
@@ -306,8 +306,8 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "skyfire-get-wallet-balance",
-      "Get current wallet balance for the buyer agent",
+      "wallet-get-balance",
+      "Get current wallet balance",
       {},
       async () => {
         try {
@@ -379,8 +379,8 @@ const handler = createMcpHandler(
     // );
 
     server.tool(
-      "skyfire-search-mcp-services",
-      "Search for MCP-compatible services in the Skyfire marketplace",
+      "wallet-search-mcp-services",
+      "Search for MCP-compatible services in marketplace",
       {
         query: z
           .string()
@@ -747,10 +747,10 @@ const handler = createMcpHandler(
 
     // Dynamic MCP tools - connect-call-discard pattern
     server.tool(
-      "dynamic_mcp_list",
-      "List tools available from an MCP service without persistent connection",
+      "discover-provider",
+      "Discover tools available from a service provider",
       {
-        serviceId: z.string().describe("Service ID from Skyfire marketplace"),
+        serviceId: z.string().describe("Service ID from marketplace"),
       },
       {
         title: 'Discover Provider'
@@ -758,7 +758,7 @@ const handler = createMcpHandler(
       async ({ serviceId }) => {
         let tempClient: MCPProxyClient | null = null;
         try {
-          console.log(`[DynamicMCP] Listing tools for service: ${serviceId}`);
+          console.log(`[Provider Discovery] Listing tools for service: ${serviceId}`);
           
           // Check cache first
           let cachedToken = await tokenCache.getToken(serviceId);
@@ -768,18 +768,18 @@ const handler = createMcpHandler(
           let serviceName: string;
           
           if (cachedConfig && cachedToken) {
-            console.log(`[DynamicMCP] Using cached config and token for ${serviceId}`);
+            console.log(`[Provider Discovery] Using cached config and token for ${serviceId}`);
             mcpServerUrl = cachedConfig.url;
             serviceName = cachedConfig.name;
           } else {
-            console.log(`[DynamicMCP] Fetching fresh config for ${serviceId}`);
+            console.log(`[Provider Discovery] Fetching fresh config for ${serviceId}`);
             
-            // Get service info from Skyfire
+            // Get service info from marketplace
             const servicesResponse = await skyfireAPI.getServices();
             const allServices = servicesResponse.data || servicesResponse;
             const service = allServices.find((s: any) => s.id === serviceId);
             if (!service) {
-              throw new Error(`Service ${serviceId} not found in Skyfire marketplace`);
+              throw new Error(`Service ${serviceId} not found in marketplace`);
             }
             
             if (service.type !== "MCP_SERVER_REMOTE" || !service.mcpServerUrl) {
@@ -871,10 +871,10 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "dynamic_mcp_call",
-      "Call a tool on an MCP service without persistent connection",
+      "interact-with-provider",
+      "Call a tool from a service provider",
       {
-        serviceId: z.string().describe("Service ID from Skyfire marketplace"),
+        serviceId: z.string().describe("Service ID from marketplace"),
         toolName: z.string().describe("Name of the tool to call"),
         arguments: z.record(z.any()).describe("Arguments to pass to the tool"),
       },
@@ -884,7 +884,7 @@ const handler = createMcpHandler(
       async ({ serviceId, toolName, arguments: args }, extra) => {
         let tempClient: MCPProxyClient | null = null;
         try {
-          console.log(`[DynamicMCP] Calling tool ${toolName} on service: ${serviceId}`);
+          console.log(`[Provider Interaction] Calling tool ${toolName} on service: ${serviceId}`);
           
           // Check cache first
           let cachedToken = await tokenCache.getToken(serviceId);
@@ -894,18 +894,18 @@ const handler = createMcpHandler(
           let serviceName: string;
           
           if (cachedConfig && cachedToken) {
-            console.log(`[DynamicMCP] Using cached config and token for ${serviceId}`);
+            console.log(`[Provider Interaction] Using cached config and token for ${serviceId}`);
             mcpServerUrl = cachedConfig.url;
             serviceName = cachedConfig.name;
           } else {
-            console.log(`[DynamicMCP] Fetching fresh config for ${serviceId}`);
+            console.log(`[Provider Interaction] Fetching fresh config for ${serviceId}`);
             
-            // Get service info from Skyfire
+            // Get service info from marketplace
             const servicesResponse = await skyfireAPI.getServices();
             const allServices = servicesResponse.data || servicesResponse;
             const service = allServices.find((s: any) => s.id === serviceId);
             if (!service) {
-              throw new Error(`Service ${serviceId} not found in Skyfire marketplace`);
+              throw new Error(`Service ${serviceId} not found in marketplace`);
             }
             
             if (service.type !== "MCP_SERVER_REMOTE" || !service.mcpServerUrl) {
@@ -1004,10 +1004,10 @@ app.get("/.well-known/oauth-protected-resource", (c) => {
         scopes_supported: [
           "openid",
           "profile",
-          "skyfire:create-token",
-          "skyfire:get-services",
-          "skyfire:wallet-balance",
-          "skyfire:token-management",
+          "wallet:create-token",
+          "wallet:get-services",
+          "wallet:balance",
+          "wallet:token-management",
         ],
       },
     })
@@ -1023,30 +1023,24 @@ app.all("/mcp/*", async (c) => {
 app.get("/", (c) => {
   return c.json({
     message:
-      "Skyfire Buyer Service MCP Server - Complete Integration with Auth0",
+      "Agent Wallet MCP Server - Service Provider Integration with Auth0",
     endpoints: {
       mcp: "/mcp",
       description:
-        "MCP server with Skyfire buyer service tools and math operations",
+        "MCP server with wallet service tools for marketplace interactions",
     },
     tools: [
-      "skyfire-create-kya-token",
-      "skyfire-create-pay-token",
-      "skyfire-create-kya-payment-token",
-      "skyfire-get-services",
-      "skyfire-get-service-tags",
-      "skyfire-get-services-by-tags",
-      "skyfire-get-wallet-balance",
-      "skyfire-get-token-charges",
-      "skyfire-introspect-token",
-      "skyfire-search-mcp-services",
-      "mcp_connect",
-      "mcp_disconnect",
-      "mcp_list_connections",
+      "wallet-get-services",
+      "wallet-get-service-tags", 
+      "wallet-get-services-by-tags",
+      "wallet-get-balance",
+      "wallet-search-mcp-services",
+      "discover-provider",
+      "interact-with-provider",
     ],
-    skyfire: {
-      api_base_url: "https://api-qa.skyfire.xyz/api/v1",
-      documentation: "https://docs.skyfire.xyz",
+    wallet: {
+      description: "Agent wallet for marketplace service interactions",
+      capabilities: ["service discovery", "secure payments", "token management"],
     },
   });
 });
